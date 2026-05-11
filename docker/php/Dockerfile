@@ -97,6 +97,5 @@ ENV ENABLE_DATABASE_MIGRATION="true"
 ENV TZ="UTC"
 
 HEALTHCHECK NONE
-
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["/usr/local/bin/start.sh"]
