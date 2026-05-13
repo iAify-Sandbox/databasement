@@ -103,17 +103,17 @@
 
             @scope('cell_jobs', $server)
             <div class="flex flex-col items-center justify-center text-sm leading-tight text-center">
-                <a href="{{ route('jobs.index', ['serverFilter' => $server->id, 'typeFilter' => 'backup']) }}"
+                <a href="{{ route('snapshots.index', ['serverFilter' => $server->id]) }}"
                    class="flex items-center gap-1 hover:text-info transition-colors tooltip @if ($server->snapshots_count === 0) pointer-events-none opacity-50 cursor-not-allowed @endif"
-                   data-tip="{{ __('View backup jobs') }}" wire:navigate>
-                    <x-icon name="o-arrow-down-tray" class="w-4 h-4" />
+                   data-tip="{{ __('View snapshots') }}" wire:navigate>
+                    <x-icon name="o-archive-box" class="w-4 h-4" />
                     <span>{{ $server->snapshots_count }}</span>
                 </a>
 
-                <a href="{{ route('jobs.index', ['serverFilter' => $server->id, 'typeFilter' => 'restore']) }}"
+                <a href="{{ route('restores.index', ['targetServerFilter' => $server->id]) }}"
                    class="flex items-center gap-1 hover:text-success transition-colors tooltip @if ($server->restores_count === 0) pointer-events-none opacity-50 cursor-not-allowed @endif"
-                   data-tip="{{ __('View restore jobs') }}" wire:navigate>
-                    <x-icon name="o-arrow-up-tray" class="w-4 h-4" />
+                   data-tip="{{ __('View restores') }}" wire:navigate>
+                    <x-icon name="o-arrow-uturn-left" class="w-4 h-4" />
                     <span>{{ $server->restores_count }}</span>
                 </a>
             </div>
@@ -122,11 +122,11 @@
             @scope('cell_actions', $server)
             <div>
                 @can('backup', $server)
-                    <x-button icon="o-arrow-down-tray" wire:click="runBackupAll('{{ $server->id }}')" spinner
+                    <x-button icon="o-archive-box" wire:click="runBackupAll('{{ $server->id }}')" spinner
                               tooltip="{{ __('Backup now') }}" class="btn-ghost btn-sm text-info" />
                 @endcan
                 @can('restore', $server)
-                    <x-button icon="o-arrow-up-tray" wire:click="confirmRestore('{{ $server->id }}')" spinner
+                    <x-button icon="o-arrow-uturn-left" wire:click="confirmRestore('{{ $server->id }}')" spinner
                               tooltip="{{ __('Restore') }}" class="btn-ghost btn-sm text-success" />
                 @endcan
             </div>
@@ -149,7 +149,7 @@
                                  :snapshotCount="$deleteSnapshotCount" />
 
     <!-- RESTORE MODAL -->
-    <livewire:database-server.restore-modal />
+    <livewire:restore.modal />
 
     <!-- REDIS RESTORE INFO MODAL -->
     <x-modal wire:model="showRedisRestoreModal" :title="__('Restore Redis / Valkey Snapshot')" class="backdrop-blur">
@@ -176,7 +176,7 @@
             </div>
 
             @if ($restoreId)
-                <a href="{{ route('jobs.index', ['serverFilter' => $restoreId, 'typeFilter' => 'backup']) }}"
+                <a href="{{ route('snapshots.index', ['serverFilter' => $restoreId]) }}"
                    class="btn btn-sm btn-outline gap-2" wire:navigate>
                     <x-icon name="o-arrow-down-tray" class="w-4 h-4" />
                     {{ __('View Backup Snapshots') }}
