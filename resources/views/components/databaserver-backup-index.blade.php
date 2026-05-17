@@ -26,15 +26,14 @@
             {{ \Illuminate\Support\Str::limit($label['retention'], 15) }}
         </span>
     @endif
-    @if($server->backups->count() > 1)
-        @can('backup', $server)
-            <x-button
-                icon="bi.database-fill-up"
-                wire:click="runBackup('{{ $backup->id }}')"
-                spinner
-                tooltip="{{ __('Backup now') }}"
-                class="btn-ghost btn-xs text-info ml-auto shrink-0 -mr-1"
-            />
-        @endcan
-    @endif
+    @can('backup', $server)
+        <x-button
+            icon="bi.database-fill-up"
+            wire:click="runBackup('{{ $backup->id }}')"
+            spinner
+            tooltip="{{ __('Backup now') }}"
+            tooltip-left="true"
+            class="btn-ghost btn-xs text-info ml-auto shrink-0 -mr-1"
+        />
+    @endcan
 </div>

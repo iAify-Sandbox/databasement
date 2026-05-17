@@ -48,7 +48,12 @@
                     </div>
                 </div>
                 <div>
-                    <div class="table-cell-primary">{{ $server->name }}</div>
+                    @can('view', $server)
+                        <a href="{{ route('database-servers.show', $server) }}" wire:navigate
+                           class="table-cell-primary link link-hover hover:text-primary">{{ $server->name }}</a>
+                    @else
+                        <div class="table-cell-primary">{{ $server->name }}</div>
+                    @endcan
                     <div class="flex items-center gap-2 text-sm text-base-content/70">
                         @include('livewire.database-server._notification-indicator', [
                             'server' => $server,

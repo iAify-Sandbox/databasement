@@ -32,9 +32,14 @@
         <div class="card-body p-5 sm:p-6">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div class="flex items-start gap-4 min-w-0">
-                    <div class="avatar avatar-placeholder shrink-0">
-                        <div class="bg-base-200 rounded-box w-14 h-14">
-                            <x-icon :name="$server->database_type->icon()" class="w-9 h-9 text-base-content" />
+                    <div class="relative shrink-0">
+                        <div class="avatar avatar-placeholder">
+                            <div class="bg-base-200 rounded-box w-14 h-14">
+                                <x-icon :name="$server->database_type->icon()" class="w-9 h-9 text-base-content" />
+                            </div>
+                        </div>
+                        <div class="absolute -top-1 -right-1">
+                            <livewire:database-server.connection-status :server="$server" lazy :key="'conn-show-' . $server->id" />
                         </div>
                     </div>
                     <div class="min-w-0 flex-1">
@@ -44,35 +49,37 @@
                         @endif
 
                         <div class="mt-3 flex flex-wrap items-center gap-2">
-                            <span class="badge badge-ghost gap-1.5">
+                            <span class="badge badge-ghost gap-1.5 whitespace-nowrap">
                                 <x-icon name="o-circle-stack" class="w-3.5 h-3.5" />
                                 {{ $server->database_type->label() }}
                             </span>
 
                             @if($sshConfig)
-                                <span class="badge badge-warning badge-soft gap-1.5">
-                                    <x-icon name="o-shield-check" class="w-3.5 h-3.5" />
-                                    {{ __('SSH tunnel') }}
-                                    <code class="font-mono">{{ $sshConfig->username . '@' . $sshConfig->host . ':' . $sshConfig->port }}</code>
+                                <span class="badge badge-warning badge-soft gap-1.5 whitespace-nowrap max-w-full">
+                                    <x-icon name="o-shield-check" class="w-3.5 h-3.5 shrink-0" />
+                                    <span class="truncate">
+                                        {{ __('SSH tunnel') }}
+                                        <code class="font-mono">{{ $sshConfig->username . '@' . $sshConfig->host . ':' . $sshConfig->port }}</code>
+                                    </span>
                                 </span>
                             @endif
 
                             @if($agent)
                                 @php $online = $agent->isOnline(); @endphp
-                                <span class="badge {{ $online ? 'badge-success' : 'badge-error' }} badge-soft gap-1.5">
-                                    <x-icon :name="$online ? 'o-signal' : 'o-signal-slash'" class="w-3.5 h-3.5" />
-                                    {{ __('Agent') }}: {{ $agent->name }}
-                                    <span class="status {{ $online ? 'status-success animate-pulse' : 'status-error' }}"></span>
+                                <span class="badge {{ $online ? 'badge-success' : 'badge-error' }} badge-soft gap-1.5 whitespace-nowrap max-w-full">
+                                    <x-icon :name="$online ? 'o-signal' : 'o-signal-slash'" class="w-3.5 h-3.5 shrink-0" />
+                                    <span class="truncate">{{ __('Agent') }}: {{ $agent->name }}</span>
+                                    <span class="status {{ $online ? 'status-success animate-pulse' : 'status-error' }} shrink-0"></span>
                                 </span>
                             @endif
 
                             @if($server->backups_enabled)
-                                <span class="badge badge-success badge-soft gap-1.5">
+                                <span class="badge badge-success badge-soft gap-1.5 whitespace-nowrap">
                                     <x-icon name="o-check-circle" class="w-3.5 h-3.5" />
                                     {{ trans_choice('{0} Backups enabled (no config)|{1} Backups enabled (:count config)|[2,*] Backups enabled (:count configs)', $server->backups->count(), ['count' => $server->backups->count()]) }}
                                 </span>
                             @else
-                                <span class="badge badge-warning badge-soft gap-1.5">
+                                <span class="badge badge-warning badge-soft gap-1.5 whitespace-nowrap">
                                     <x-icon name="o-no-symbol" class="w-3.5 h-3.5" />
                                     {{ __('Backups disabled') }}
                                 </span>
@@ -106,7 +113,7 @@
     </div>
 
     {{-- ── Stat strip ── --}}
-    <div class="stats stats-vertical lg:stats-horizontal shadow-sm border border-base-200 w-full mb-6">
+    <div class="stats stats-vertical lg:stats-horizontal bg-base-100 shadow-sm border border-base-200 w-full mb-6">
         <a href="{{ route('snapshots.index', ['serverFilter' => $server->id]) }}" wire:navigate
            class="stat group cursor-pointer transition-colors hover:bg-base-200">
             <div class="stat-figure text-info transition-transform group-hover:scale-110">
