@@ -71,6 +71,7 @@ class ProcessBackupJob implements ShouldQueue
                 databaseName: $snapshot->database_name,
                 workingDirectory: FilesystemSupport::createWorkingDirectory('backup', $snapshot->id),
                 backupPath: $backupPath,
+                postBackupScript: AppConfig::get('backup.post_backup_script'),
             );
 
             $result = $backupTask->execute($config, $job);

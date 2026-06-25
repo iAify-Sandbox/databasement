@@ -24,6 +24,7 @@ class BackupTask
         private readonly FilesystemProvider $filesystemProvider,
         private readonly CompressorFactory $compressorFactory,
         private readonly SshTunnelService $sshTunnelService,
+        private readonly PostScriptRunner $postScriptRunner,
     ) {}
 
     protected function getSshTunnelService(): SshTunnelService
@@ -115,6 +116,24 @@ class BackupTask
                 'checksum' => substr($checksum, 0, 16).'...',
                 'filename' => $filename,
             ]);
+
+            $this->postScriptRunner->run(
+                $this->shellProcessor,
+                $logger,
+                'post-backup-script',
+                $config->postBackupScript,
+                $config->workingDirectory,
+                [
+                    'BACKUP_SERVER_ID' => $db->serverId,
+                    'BACKUP_SERVER_NAME' => $db->serverName,
+                    'BACKUP_DATABASE_NAME' => $config->databaseName,
+                    'BACKUP_DATABASE_TYPE' => $db->databaseType->value,
+                    'BACKUP_FILENAME' => $filename,
+                    'BACKUP_FILE_SIZE' => (string) $fileSize,
+                    'BACKUP_CHECKSUM' => $checksum,
+                    'BACKUP_VOLUME_NAME' => $config->volume->name,
+                ],
+            );
 
             return new BackupResult($filename, $fileSize, $checksum);
         } finally {
