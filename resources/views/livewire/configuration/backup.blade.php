@@ -56,7 +56,7 @@
                                 {{ $schedule->expression }}
                             </span>
                             <span class="text-sm text-base-content/60 min-w-0">{{ \App\Support\Formatters::cronTranslation($schedule->expression) }}</span>
-                            @if ($this->isAdmin)
+                            @if ($this->canManage)
                                 <div class="flex items-center gap-0.5 shrink-0 ml-auto">
                                     <x-button icon="o-pencil-square" class="btn-ghost btn-sm" wire:click="openScheduleModal('{{ $schedule->id }}')" :tooltip-left="__('Edit')" />
                                     @if ($schedule->total_backups_count > 0 || $schedule->scheduled_restores_count > 0)
@@ -86,7 +86,7 @@
                 @endforelse
             </div>
 
-            @if ($this->isAdmin)
+            @if ($this->canManage)
                 <div class="flex items-center justify-end border-t border-base-200/60 pt-4 mt-4">
                     <x-button
                         :label="__('Add Schedule')"
@@ -113,7 +113,7 @@
             <form wire:submit="saveBackupConfig">
                 <div class="divide-y divide-base-200/80">
                     <x-config-row :label="__('Working Directory')" :description="__('Temporary directory for backup and restore operations.')">
-                        <x-input wire:model.blur="form.working_directory" :disabled="!$this->isAdmin" />
+                        <x-input wire:model.blur="form.working_directory" :disabled="!$this->canManage" />
                     </x-config-row>
 
                     <x-config-row :label="__('Compression')">
@@ -124,49 +124,49 @@
                                 <a href="https://david-crty.github.io/databasement/self-hosting/configuration/backup" target="_blank" class="link link-primary underline-offset-2">{{ __('documentation') }}</a>.
                             @endif
                         </x-slot:description>
-                        <x-select wire:model.live="form.compression" :options="$compressionOptions" :disabled="!$this->isAdmin" />
+                        <x-select wire:model.live="form.compression" :options="$compressionOptions" :disabled="!$this->canManage" />
                     </x-config-row>
 
                     <x-config-row :label="__('Compression Level')" :description="__('1-9 for gzip/encrypted, 1-19 for zstd.')">
-                        <x-input wire:model.blur="form.compression_level" type="number" min="1" max="19" :disabled="!$this->isAdmin" />
+                        <x-input wire:model.blur="form.compression_level" type="number" min="1" max="19" :disabled="!$this->canManage" />
                     </x-config-row>
 
                     <x-config-row :label="__('Job Timeout')" :description="__('Maximum number of seconds a backup or restore job can run before timing out.')">
-                        <x-input wire:model.blur="form.job_timeout" type="number" min="60" max="86400" :disabled="!$this->isAdmin" />
+                        <x-input wire:model.blur="form.job_timeout" type="number" min="60" max="86400" :disabled="!$this->canManage" />
                     </x-config-row>
 
                     <x-config-row :label="__('Job Tries')" :description="__('Number of attempts before a job is marked as failed.')">
-                        <x-input wire:model.blur="form.job_tries" type="number" min="1" max="10" :disabled="!$this->isAdmin" />
+                        <x-input wire:model.blur="form.job_tries" type="number" min="1" max="10" :disabled="!$this->canManage" />
                     </x-config-row>
 
                     <x-config-row :label="__('Job Backoff')" :description="__('Number of seconds to wait before retrying a failed job.')">
-                        <x-input wire:model.blur="form.job_backoff" type="number" min="0" max="3600" :disabled="!$this->isAdmin" />
+                        <x-input wire:model.blur="form.job_backoff" type="number" min="0" max="3600" :disabled="!$this->canManage" />
                     </x-config-row>
 
                     <x-config-row :label="__('Cleanup Cron')" :description="__('Cron expression that controls when old snapshots are cleaned up.')">
                         <div class="flex items-start gap-2">
                             <div class="flex-1">
-                                <x-input wire:model.blur="form.cleanup_cron" :disabled="!$this->isAdmin" />
+                                <x-input wire:model.blur="form.cleanup_cron" :disabled="!$this->canManage" />
                                 <div class="fieldset-label mt-1 text-xs">{{ \App\Support\Formatters::cronTranslation($form->cleanup_cron) }}</div>
                             </div>
-                            @if ($this->isAdmin)
+                            @if ($this->canManage)
                                 <x-button icon="o-play" class="btn-ghost btn-sm mt-1" wire:click="runCleanup" spinner="runCleanup" :tooltip-left="__('Run now')" />
                             @endif
                         </div>
                     </x-config-row>
 
                     <x-config-row :label="__('Verify Snapshot Files')" :description="__('Periodically check that backup files still exist on their storage volumes.')">
-                        <x-toggle wire:model.live="form.verify_files" :disabled="!$this->isAdmin" />
+                        <x-toggle wire:model.live="form.verify_files" :disabled="!$this->canManage" />
                     </x-config-row>
 
                     @if ($form->verify_files)
                         <x-config-row :label="__('Verify Files Cron')" :description="__('Cron expression that controls when snapshot file verification runs.')">
                             <div class="flex items-start gap-2">
                                 <div class="flex-1">
-                                    <x-input wire:model.blur="form.verify_files_cron" :disabled="!$this->isAdmin" />
+                                    <x-input wire:model.blur="form.verify_files_cron" :disabled="!$this->canManage" />
                                     <div class="fieldset-label mt-1 text-xs">{{ \App\Support\Formatters::cronTranslation($form->verify_files_cron) }}</div>
                                 </div>
-                                @if ($this->isAdmin)
+                                @if ($this->canManage)
                                     <x-button icon="o-play" class="btn-ghost btn-sm mt-1" wire:click="runVerifyFiles" spinner="runVerifyFiles" :tooltip-left="__('Run now')" />
                                 @endif
                             </div>
@@ -263,7 +263,7 @@
                                     wire:model.blur="form.{{ $editor['field'] }}"
                                     rows="6"
                                     spellcheck="false"
-                                    @disabled(!$this->isAdmin)
+                                    @disabled(!$this->canManage)
                                     placeholder="{{ $editor['placeholder'] }}"
                                     class="w-full resize-y border-0 bg-base-200/30 p-3 font-mono text-xs leading-relaxed text-base-content focus:outline-none focus:ring-0 disabled:opacity-60 disabled:cursor-not-allowed"
                                 ></textarea>
@@ -299,7 +299,7 @@
                     </div>
                 </div>
 
-                @if ($this->isAdmin)
+                @if ($this->canManage)
                 <div class="flex items-center justify-end border-t border-base-200/60 pt-6">
                     <x-button
                         type="submit"

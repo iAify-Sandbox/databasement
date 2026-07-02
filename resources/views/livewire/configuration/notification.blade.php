@@ -34,7 +34,7 @@
                                 {{ $label }}: {{ $value }}{{ !$loop->last ? ' · ' : '' }}
                             @endforeach
                         </span>
-                        @if ($this->isAdmin)
+                        @if ($this->canManage)
                             <div class="flex items-center gap-0.5 shrink-0 ml-auto">
                                 <x-button icon="o-paper-airplane" class="btn-ghost btn-sm" wire:click="sendTestNotification('{{ $channel->id }}')" spinner="sendTestNotification('{{ $channel->id }}')" :tooltip-left="__('Test')" />
                                 <x-button icon="o-pencil-square" class="btn-ghost btn-sm" wire:click="openChannelModal('{{ $channel->id }}')" :tooltip-left="__('Edit')" />
@@ -48,7 +48,7 @@
             @endforelse
         </div>
 
-        @if ($this->isAdmin)
+        @if ($this->canManage)
             <div class="flex items-center justify-end border-t border-base-200/60 pt-4 mt-4">
                 <x-button
                     :label="__('Add Channel')"

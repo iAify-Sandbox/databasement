@@ -20,9 +20,11 @@
         </x-slot:actions>
     </x-alert>
 
-    <div class="flex justify-end mb-4">
-        <x-button :label="__('New Organization')" icon="o-plus" class="btn-primary" wire:click="openCreateModal" />
-    </div>
+    @can('create', \App\Models\Organization::class)
+        <div class="flex justify-end mb-4">
+            <x-button :label="__('New Organization')" icon="o-plus" class="btn-primary" wire:click="openCreateModal" />
+        </div>
+    @endcan
 
     <x-card shadow>
         <x-table :headers="$headers" :rows="$organizations">
@@ -47,17 +49,19 @@
             @endscope
 
             @scope('cell_actions', $org)
-                @unless($org->is_default)
+                {{-- update/delete policies already return false for the default org and non-super-admins --}}
+                @can('update', $org)
                     <div class="flex justify-end flex-nowrap gap-1">
                         <x-button icon="o-pencil" class="btn-ghost btn-xs" wire:click="openEditModal('{{ $org->id }}')" :tooltip="__('Edit')" />
                         <x-button icon="o-arrows-pointing-in" class="btn-ghost btn-xs" wire:click="openMergeModal('{{ $org->id }}')" :tooltip="__('Merge')" />
                         <x-button icon="o-trash" class="btn-ghost btn-xs text-error" wire:click="confirmDelete('{{ $org->id }}')" :tooltip="__('Delete')" />
                     </div>
-                @endunless
+                @endcan
             @endscope
         </x-table>
     </x-card>
 
+    @can('create', \App\Models\Organization::class)
     {{-- Create Modal --}}
     <x-modal wire:model="showCreateModal" :title="__('Create Organization')">
         <x-input :label="__('Name')" wire:model="newOrgName" />
@@ -108,4 +112,5 @@
             <x-button :label="__('Delete')" class="btn-error" wire:click="deleteOrganization" spinner="deleteOrganization" />
         </x-slot:actions>
     </x-modal>
+    @endcan
 </div>
