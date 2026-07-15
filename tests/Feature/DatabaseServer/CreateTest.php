@@ -323,6 +323,49 @@ test('can create mysql database server with ssl_enabled', function () {
     expect($server->getExtraConfig('ssl_enabled'))->toBeTrue();
 });
 
+test('can create mongodb server with advanced connection options', function () {
+    $user = User::factory()->withAbilities([Ability::ManageDatabaseServers->value])->create();
+    $volume = Volume::factory()->local()->create(['name' => 'Test Volume']);
+
+    Livewire::actingAs($user)
+        ->test(Create::class)
+        ->set('form.name', 'Atlas Cluster')
+        ->set('form.database_type', 'mongodb')
+        ->set('form.host', 'cluster.example.mongodb.net')
+        ->set('form.username', 'dbuser')
+        ->set('form.password', 'secret123')
+        ->set('form.srv_enabled', true)
+        ->set('form.connection_options', 'tls=true&replicaSet=rs0&retryWrites=true&w=majority')
+        ->set('form.backups.0.database_names.0', 'myapp')
+        ->set('form.backups.0.volume_id', $volume->id)
+        ->set('form.backups.0.backup_schedule_id', dailySchedule()->id)
+        ->set('form.backups.0.retention_days', 14)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $server = DatabaseServer::where('name', 'Atlas Cluster')->first();
+
+    expect($server->getExtraConfig('srv_enabled'))->toBeTrue()
+        ->and($server->getExtraConfig('connection_options'))->toBe('tls=true&replicaSet=rs0&retryWrites=true&w=majority');
+});
+
+test('mongodb dump command preview masks the uri password cleanly', function () {
+    $user = User::factory()->withAbilities([Ability::ManageDatabaseServers->value])->create();
+
+    $form = Livewire::actingAs($user)
+        ->test(Create::class)
+        ->set('form.database_type', 'mongodb')
+        ->viewData('form');
+
+    $preview = $form->getDumpCommandPreview();
+
+    // The password sits in the URI userinfo, so it must be redacted to *** and
+    // never leak the URL-encoded placeholder (%2A) or the raw asterisk mask.
+    expect($preview)->toContain('mongodb://user:***@hostname')
+        ->and($preview)->not->toContain('%2A')
+        ->and($preview)->not->toContain('********');
+});
+
 test('local volume options reflect use_agent state', function (bool $useAgent, bool $expectedDisabled) {
     $user = User::factory()->withAbilities([Ability::ManageDatabaseServers->value])->create();
     $localVolume = Volume::factory()->local()->create(['name' => 'Local Vol']);
