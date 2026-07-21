@@ -355,6 +355,10 @@ These are standard industry jargon that developers worldwide understand regardle
 - `composer.json` - Contains helpful script shortcuts (`composer test`, `composer setup`)
 - `docker-compose.yml` - Defines services: php (FrankenPHP), queue worker, mysql, postgres, redis
 
+## Communication Conventions
+
+- When drafting GitHub responses (issue/PR comments, replies), do not use em dashes (`—`). Rephrase with commas, parentheses, or separate sentences instead.
+- Keep GitHub responses concise. Get to the point and avoid unnecessary verbosity.
 ===
 
 <laravel-boost-guidelines>
