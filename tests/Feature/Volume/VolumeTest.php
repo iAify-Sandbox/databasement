@@ -8,6 +8,7 @@ use App\Livewire\Volume\Index;
 use App\Models\BackupJob;
 use App\Models\DatabaseServer;
 use App\Models\Restore;
+use App\Models\Snapshot;
 use App\Models\User;
 use App\Models\Volume;
 use App\Services\Backup\BackupJobFactory;
@@ -220,6 +221,53 @@ describe('volume editing', function () {
     });
 });
 
+describe('volume storage limit', function () {
+    test('storage limit round-trips through the form as GB and clears when emptied', function () {
+        $user = User::factory()->withAbilities([Ability::ManageVolumes->value])->create();
+
+        // Entered in GB on create, stored as bytes.
+        Livewire::actingAs($user)
+            ->test(Create::class)
+            ->set('form.name', 'Quota Volume')
+            ->set('form.type', 'local')
+            ->set('form.localConfig.path', '/var/backups')
+            ->set('form.maxStorageGb', '10')
+            ->call('save')
+            ->assertRedirect(route('volumes.index'));
+
+        $volume = Volume::where('name', 'Quota Volume')->firstOrFail();
+        expect($volume->maxStorageBytes())->toBe(10 * (1024 ** 3));
+
+        // Reopens showing the limit back in GB; clearing it removes the limit.
+        Livewire::actingAs($user)
+            ->test(Edit::class, ['volume' => $volume])
+            ->assertSet('form.maxStorageGb', '10')
+            ->set('form.maxStorageGb', '')
+            ->call('save')
+            ->assertRedirect(route('volumes.index'));
+
+        expect($volume->refresh()->maxStorageBytes())->toBeNull();
+    });
+
+    test('the storage limit stays editable on a volume locked by its snapshots', function () {
+        $user = User::factory()->withAbilities([Ability::ManageVolumes->value])->create();
+        $server = DatabaseServer::factory()->create(['database_names' => ['testdb']]);
+        $volume = $server->backups->first()->volume;
+        app(BackupJobFactory::class)->createSnapshots($server->backups->first(), 'manual');
+
+        expect($volume->hasSnapshots())->toBeTrue();
+
+        Livewire::actingAs($user)
+            ->test(Edit::class, ['volume' => $volume])
+            ->assertSet('hasSnapshots', true)
+            ->set('form.maxStorageGb', '5')
+            ->call('save')
+            ->assertRedirect(route('volumes.index'));
+
+        expect($volume->refresh()->maxStorageBytes())->toBe(5 * (1024 ** 3));
+    });
+});
+
 describe('volume listing', function () {
     test('displays volumes in index', function () {
         // Viewing needs no ability — an org member with zero grants can list volumes.
@@ -233,12 +281,21 @@ describe('volume listing', function () {
             'config' => ['bucket' => 'my-bucket', 'prefix' => ''],
         ]);
 
+        // A capped volume with a completed 3 GB snapshot exercises the Usage column.
+        $server = DatabaseServer::factory()->create(['database_names' => ['testdb']]);
+        $cappedVolume = $server->backups->first()->volume;
+        $cappedVolume->update(['config' => [...$cappedVolume->config, 'max_storage_bytes' => 10 * (1024 ** 3)]]);
+        Snapshot::factory()->forServer($server)->create(['file_size' => 3 * (1024 ** 3)]);
+
         Livewire::actingAs($user)
             ->test(Index::class)
             ->assertSee('Local Volume')
             ->assertSee('S3 Volume')
             ->assertSee('/var/backups')
-            ->assertSee('my-bucket');
+            ->assertSee('my-bucket')
+            ->assertSee('Usage')
+            ->assertSee('3 GB')
+            ->assertSee('10 GB');
     });
 
     test('can search volumes', function () {

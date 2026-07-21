@@ -17,6 +17,17 @@ use App\Enums\VolumeType;
             required
         />
 
+        <x-input
+            wire:model="form.maxStorageGb"
+            :label="__('Maximum storage (GB)')"
+            :hint="__('Optional. A backup that would push this volume’s total size over the limit fails before uploading — no snapshots are deleted automatically. Free up space by removing old snapshots. Leave empty for no limit.')"
+            :placeholder="__('e.g., 10')"
+            type="number"
+            step="0.1"
+            min="0"
+            suffix="GB"
+        />
+
         <!-- Storage Type Selection (immutable after creation) -->
         @php $typeDisabled = $readonly || $form->volume !== null; @endphp
         <div>

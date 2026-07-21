@@ -6,6 +6,7 @@ use App\Enums\VolumeType;
 use App\Models\Volume;
 use App\Services\CurrentOrganization;
 use App\Services\VolumeConnectionTester;
+use App\Support\Formatters;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\Form;
@@ -17,6 +18,10 @@ class VolumeForm extends Form
     public string $name = '';
 
     public string $type = 'local';
+
+    // Optional storage quota for the volume, entered in GB. Empty = no limit.
+    // Stored under the `max_storage_bytes` key of the volume's config JSON.
+    public ?string $maxStorageGb = null;
 
     // Config arrays for each volume type (initialized from connector defaults in constructor)
     /** @var array<string, mixed> */
@@ -66,6 +71,8 @@ class VolumeForm extends Form
         $decryptedConfig = $volumeType->maskSensitiveFields($volume->getDecryptedConfig());
         $propertyName = $volumeType->configPropertyName();
         $this->{$propertyName} = array_merge($this->{$propertyName}, $decryptedConfig);
+
+        $this->maxStorageGb = Formatters::bytesToGb($volume->maxStorageBytes());
     }
 
     /**
@@ -76,6 +83,7 @@ class VolumeForm extends Form
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:'.implode(',', array_column(VolumeType::cases(), 'value'))],
+            'maxStorageGb' => ['nullable', 'numeric', 'min:0.001'],
         ];
 
         // Merge rules from all connector classes
@@ -123,14 +131,21 @@ class VolumeForm extends Form
         ]);
     }
 
-    public function updateNameOnly(): void
+    /**
+     * Update a volume that is locked by existing snapshots: only the name and
+     * storage limit stay editable — the connector config is frozen because
+     * stored snapshots already depend on it.
+     */
+    public function updateLockedVolume(): void
     {
         $this->validate([
             'name' => ['required', 'string', 'max:255', 'unique:volumes,name,'.$this->volume->id],
+            'maxStorageGb' => ['nullable', 'numeric', 'min:0.001'],
         ]);
 
         $this->volume->update([
             'name' => $this->name,
+            'config' => $this->applyMaxStorageToConfig($this->volume->config),
         ]);
     }
 
@@ -155,7 +170,29 @@ class VolumeForm extends Form
         $volumeType = VolumeType::from($this->type);
         $persistedConfig = $this->volume !== null ? $this->volume->config : [];
 
-        return $volumeType->encryptSensitiveFields($this->getActiveConfig(), $persistedConfig);
+        $config = $volumeType->encryptSensitiveFields($this->getActiveConfig(), $persistedConfig);
+
+        return $this->applyMaxStorageToConfig($config);
+    }
+
+    /**
+     * Store the storage quota (GB from the form, in bytes) under the config's
+     * `max_storage_bytes` key, or remove it when the field is left empty.
+     *
+     * @param  array<string, mixed>  $config
+     * @return array<string, mixed>
+     */
+    protected function applyMaxStorageToConfig(array $config): array
+    {
+        $bytes = Formatters::gbToBytes($this->maxStorageGb);
+
+        if ($bytes === null) {
+            unset($config['max_storage_bytes']);
+        } else {
+            $config['max_storage_bytes'] = $bytes;
+        }
+
+        return $config;
     }
 
     public function testConnection(): void
