@@ -42,6 +42,9 @@ class Form extends \Livewire\Form
     /** @var array<string, mixed> */
     public array $azureConfig = [];
 
+    /** @var array<string, mixed> */
+    public array $smbConfig = [];
+
     // Connection test state
     public ?string $connectionTestMessage = null;
 
